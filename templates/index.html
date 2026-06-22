@@ -117,7 +117,9 @@ let highlightPath = [];
 let startNode = null, endNode = null;
 let mapLayers = [];
 
-const map = L.map('map').setView([-8.1645, 113.7165], 16);
+const map = L.map('map', {
+    preferCanvas: true
+}).setView([-8.1644, 113.7215], 16);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
