@@ -366,6 +366,9 @@ select:focus {
 /*MEDIA QUERIES FOR MOBILE FRIENDLY*/
 
 @media (max-width: 768px) {
+  :root {
+    --glass-blur: blur(12px) saturate(140%);
+  }
 
   body {
     overflow: hidden;
@@ -439,13 +442,16 @@ select:focus {
     padding: 20px;
     gap: 14px;
     overflow-y: auto;
-
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.55));
+    
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border-top: 1px solid var(--color-border-tertiary);
     border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+    will-change: transform, backdrop-filter;
+    transform: translateZ(0); 
+    -webkit-transform: translateZ(0);
   }
 
   .control-panel .card { 
