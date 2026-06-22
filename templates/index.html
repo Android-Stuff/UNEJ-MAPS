@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Navigasi Kampus - UNEJ Maps</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <div class="brand-section">
+      <h2>UNEJ Maps<span class="live-indicator"></span></h2>
+      <p>Peta UNEJ Interaktif dengan Algoritma Navigasi</p>
+    </div>
+    
+    <div class="weather-widget">
+      <svg class="weather-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="38" cy="26" r="10" fill="url(#sunGlow)" />
+        <path d="M46 42.5C46 36.7 41.3 32 35.5 32C34.9 32 34.3 32.1 33.7 32.2C31.4 27.4 26.5 24 20.8 24C13.2 24 7 30.2 7 37.8C7 38.4 7.1 39 7.1 39.6C3 41 0 44.9 0 49.5C0 55.3 4.7 60 10.5 60H45.5C51.3 60 56 55.3 56 49.5C56 44.5 52.5 40.3 46 42.5Z" fill="url(#cloudGlass)" />
+        <defs>
+          <linearGradient id="sunGlow" x1="28" y1="16" x2="48" y2="36" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFD60A"/>
+            <stop offset="100%" stop-color="#FF9500"/>
+          </linearGradient>
+          <linearGradient id="cloudGlass" x1="0" y1="24" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="rgba(255, 255, 255, 0.9)"/>
+            <stop offset="100%" stop-color="rgba(215, 230, 245, 0.7)"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="weather-data">
+        <span class="weather-temp">31°C</span>
+        <span class="weather-loc">Jember • Cerah Berawan</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="map-panel">
+      <div id="map"></div>
+    </div>
+    
+    <div class="control-panel">
+      <div class="card">
+        <div class="card-title">Cari rute</div>
+        <select id="fromNode" onchange="updateStartEnd()"><option value="">-- Dari gedung --</option></select>
+        <select id="toNode" onchange="updateStartEnd()"><option value="">-- Ke gedung --</option></select>
+        <div class="algo-btns">
+          <button class="algo-btn dijkstra active" onclick="setAlgo('dijkstra',this)">Dijkstra</button>
+          <button class="algo-btn bfs" onclick="setAlgo('bfs',this)">BFS</button>
+          <button class="algo-btn dfs" onclick="setAlgo('dfs',this)">DFS</button>
+        </div>
+        <button class="run-btn" id="runBtn" style="background:#185FA5" onclick="findRoute()">Cari rute</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Hasil rute</div>
+        <div class="result-box">
+          <div class="result-path" id="resultPath">Pilih gedung asal & tujuan.</div>
+          <div class="result-meta" id="resultMeta"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Log algoritma</div>
+        <ul class="step-list" id="stepList"><li>Belum ada pencarian.</li></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const NODES = [
+  { id: 'rektorat', label: 'Rektorat', lat: -8.165048399810725, lng: 113.71630295832149 },
+  { id: 'library', label: 'Perpustakaan', lat: -8.165488, lng: 113.7173286 },
+  { id: 'fasilkom', label: 'Fasilkom', lat: -8.1657613, lng: 113.7170154 },
+  { id: 'masjid', label: 'Masjid', lat: -8.1639625, lng: 113.7150476 },
+  { id: 'fkip', label: 'FKIP', lat: -8.166694185407048, lng: 113.71580935809783 },
+  { id: 'fmipa', label: 'FMIPA', lat: -8.164200657427571, lng: 113.71789928525561 },
+  { id: 'auditorium', label: 'Gedung Auditorium', lat: -8.163805199100688, lng: 113.71400522654248 },
+  { id: 'soetardjo', label: 'Gedung Soetardjo', lat: -8.164949491951655, lng: 113.71263148549767 },
+  { id: 'fk', label: 'Fakultas Kedokteran', lat: -8.16135798215189, lng: 113.71836289288191 },
+  { id: 'ftek', label: 'Fakultas Teknik', lat: -8.162188934459389, lng: 113.72090327504522 }
+];
+
+const EDGES = [
+  { from: 'rektorat', to: 'library', w: 2 },
+  { from: 'rektorat', to: 'masjid', w: 2 },
+  { from: 'rektorat', to: 'fkip', w: 3 },
+  { from: 'library', to: 'fasilkom', w: 1 },
+  { from: 'library', to: 'fmipa', w: 2 },
+  { from: 'masjid', to: 'auditorium', w: 3 },
+  { from: 'fasilkom', to: 'rektorat', w: 2 },
+  { from: 'auditorium', to: 'soetardjo', w: 2 },
+  { from: 'fkip', to: 'soetardjo', w: 4 },
+  { from: 'fmipa', to: 'fk', w: 4 },
+  { from: 'fmipa', to: 'ftek', w: 5 },
+  { from: 'fk', to: 'ftek', w: 4 }
+];
+
+const nodeMap = {};
+NODES.forEach(n => { nodeMap[n.id] = n; });
+
+let currentAlgo = 'dijkstra';
+let highlightPath = [];
+let startNode = null, endNode = null;
+let mapLayers = [];
+
+const map = L.map('map').setView([-8.1645, 113.7165], 16);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+map.zoomControl.setPosition('topright');
+
+setTimeout(() => { map.invalidateSize(); }, 300);
+
+const fromSel = document.getElementById('fromNode');
+const toSel = document.getElementById('toNode');
+NODES.forEach(n => {
+  fromSel.innerHTML += `<option value="${n.id}">${n.label}</option>`;
+  toSel.innerHTML += `<option value="${n.id}">${n.label}</option>`;
+});
+
+function setAlgo(name, btn) {
+  currentAlgo = name;
+  document.querySelectorAll('.algo-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const colors = { dijkstra:'#185FA5', bfs:'#0F6E56', dfs:'#993556' };
+  document.getElementById('runBtn').style.background = colors[name];
+  if (highlightPath.length) findRoute();
+}
+
+function updateStartEnd() {
+  startNode = fromSel.value;
+  endNode = toSel.value;
+  drawMap();
+}
+
+async function findRoute() {
+  const src = fromSel.value, dst = toSel.value;
+  if (!src || !dst) return alert('Pilih asal dan tujuan!');
+  if (src === dst) return alert('Asal dan tujuan sama!');
+  
+  startNode = src; endNode = dst;
+
+  try {
+    const response = await fetch('/api/route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: src, to: dst, algo: currentAlgo })
+    });
+    
+    const data = await response.json();
+    if (data.error) return alert(data.error);
+
+    highlightPath = data.path;
+    
+    const rp = document.getElementById('resultPath');
+    const rm = document.getElementById('resultMeta');
+    const sl = document.getElementById('stepList');
+    
+    if (!highlightPath.length) {
+      rp.textContent = 'Rute tidak ditemukan.'; rm.textContent=''; sl.innerHTML='';
+    } else {
+      const names = highlightPath.map(id => nodeMap[id].label);
+      rp.innerHTML = names.join(' <span style="color:#aaacb0">→</span> ');
+      rm.innerHTML = `<strong>Total Bobot/Langkah:</strong> ${data.dist}`;
+      sl.innerHTML = data.log.map(l=>`<li>${l}</li>`).join('');
+    }
+    
+    drawMap();
+  } catch (error) {
+    console.error("Error fetching route:", error);
+    alert("Gagal terhubung ke server Python.");
+  }
+}
+
+function drawMap() {
+  mapLayers.forEach(layer => map.removeLayer(layer));
+  mapLayers = [];
+
+  const algoColors = { dijkstra:'#185FA5', bfs:'#0F6E56', dfs:'#993556' };
+  const hColor = algoColors[currentAlgo] || '#185FA5';
+
+  const pathSet = new Set();
+  for (let i=0; i<highlightPath.length-1; i++) {
+    pathSet.add(`${highlightPath[i]}-${highlightPath[i+1]}`);
+  }
+
+  // Draw Edges
+  EDGES.forEach(e => {
+    const a = nodeMap[e.from], b = nodeMap[e.to];
+    const isPath = pathSet.has(`${e.from}-${e.to}`) || pathSet.has(`${e.to}-${e.from}`);
+    
+    const line = L.polyline([[a.lat, a.lng], [b.lat, b.lng]], {
+      color: isPath ? hColor : '#a0a0a5',
+      weight: isPath ? 5 : 2.5,
+      dashArray: isPath ? null : '6, 6',
+      opacity: isPath ? 1 : 0.5
+    }).addTo(map);
+    mapLayers.push(line);
+
+    const midLat = (a.lat + b.lat) / 2;
+    const midLng = (a.lng + b.lng) / 2;
+    const weightIcon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div class="weight-label">${e.w}</div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+    const weightMarker = L.marker([midLat, midLng], { icon: weightIcon }).addTo(map);
+    mapLayers.push(weightMarker);
+  });
+
+  // Draw Nodes
+  NODES.forEach(n => {
+    const isStart = n.id === startNode;
+    const isEnd = n.id === endNode;
+    const isOnPath = highlightPath.includes(n.id);
+    
+    let fillColor = isOnPath ? hColor : '#fff';
+    let borderColor = isOnPath ? '#fff' : '#222';
+    let radius = (isStart || isEnd) ? 9 : 6;
+
+    const marker = L.circleMarker([n.lat, n.lng], {
+      radius: radius,
+      fillColor: fillColor,
+      color: borderColor,
+      weight: 2.5,
+      opacity: 1,
+      fillOpacity: 1
+    }).addTo(map);
+    
+    marker.bindTooltip(n.label, { permanent: true, direction: 'top', offset: [0, -10], className: 'node-label' });
+    
+    marker.on('click', () => {
+      if (!fromSel.value || (fromSel.value && toSel.value)) {
+        fromSel.value = n.id; toSel.value = '';
+      } else {
+        toSel.value = n.id;
+        findRoute();
+      }
+      updateStartEnd();
+    });
+
+    mapLayers.push(marker);
+  });
+}
+
+drawMap();
+</script>
+</body>
+</html>
