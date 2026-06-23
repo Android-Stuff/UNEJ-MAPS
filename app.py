@@ -29,7 +29,8 @@ EDGES = [
     {'from': 'fkip', 'to': 'soetardjo', 'w': 4},
     {'from': 'fmipa', 'to': 'fk', 'w': 4},
     {'from': 'fmipa', 'to': 'ftek', 'w': 5},
-    {'from': 'fk', 'to': 'ftek', 'w': 4}
+    {'from': 'fk', 'to': 'ftek', 'w': 4},
+    {'from': 'fkip', 'to': 'fasilkom', 'w': 3}
 ]
 
 graph = {n['id']: [] for n in NODES}
