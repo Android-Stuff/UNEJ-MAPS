@@ -19,7 +19,7 @@ NODES = [
 
 EDGES = [
     {'from': 'rektorat', 'to': 'library', 'w': 2},
-    {'from': 'rektorat', 'to': 'masjid', 'w': 2},
+    {'from': 'rektorat', 'to': 'masjid', 'w': 3},
     {'from': 'rektorat', 'to': 'fkip', 'w': 3},
     {'from': 'library', 'to': 'fasilkom', 'w': 1},
     {'from': 'library', 'to': 'fmipa', 'w': 2},
