@@ -140,8 +140,28 @@ function setAlgo(name, btn) {
   currentAlgo = name;
   document.querySelectorAll('.algo-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const colors = { dijkstra:'#185FA5', bfs:'#0F6E56', dfs:'#993556' };
-  document.getElementById('runBtn').style.background = colors[name];
+
+  const styleMap = { 
+    dijkstra: {
+      bg: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+      shadow: '0 4px 14px rgba(59, 130, 246, 0.4)'
+    },
+    bfs: {
+      bg: 'linear-gradient(135deg, #10B981, #059669)',
+      shadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+    },
+    dfs: {
+      bg: 'linear-gradient(135deg, #F43F5E, #BE123C)',
+      shadow: '0 4px 14px rgba(244, 63, 94, 0.4)'
+    }
+  };
+  
+  const runBtn = document.getElementById('runBtn');
+  if (runBtn) {
+    runBtn.style.background = styleMap[name].bg;
+    runBtn.style.boxShadow = styleMap[name].shadow;
+  }
+  
   if (highlightPath.length) findRoute();
 }
 
