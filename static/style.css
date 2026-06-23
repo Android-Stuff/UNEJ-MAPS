@@ -250,6 +250,7 @@ select:focus {
   cursor: pointer; 
   font-size: 13px; 
   font-weight: 700; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .algo-btn:hover { 
@@ -265,9 +266,26 @@ select:focus {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-.algo-btn.dijkstra.active { background: linear-gradient(135deg, #185FA5, #0f457a); }
-.algo-btn.bfs.active { background: linear-gradient(135deg, #0F6E56, #094737); }
-.algo-btn.dfs.active { background: linear-gradient(135deg, #993556, #6b213a); }
+.algo-btn.dijkstra.active { 
+  background: linear-gradient(135deg, #3B82F6, #1D4ED8); 
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+  border-color: transparent;
+}
+
+.algo-btn.bfs.active { 
+  background: linear-gradient(135deg, #10B981, #059669); 
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  border-color: transparent;
+}
+
+.algo-btn.dfs.active { 
+  background: linear-gradient(135deg, #F43F5E, #BE123C); 
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4);
+  border-color: transparent;
+}
 
 .run-btn { 
   padding: 15px; 
